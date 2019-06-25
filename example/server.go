@@ -1,6 +1,10 @@
 package main
 
+import (
+	"golangSocketPhp"
+)
+
 func main() {
-	//var webSocket
+	var webSocket golangsocketphp.SocketServer
 
 }
