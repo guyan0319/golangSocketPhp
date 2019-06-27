@@ -17,9 +17,14 @@ import (
 
 type SocketServer struct {
 	sync.RWMutex
+	//The network must be "tcp", "tcp4", "tcp6", "unix" or "unixpacket".
 	Network string
+	// If the port in the address parameter is empty or "0", as in
+	// "127.0.0.1:" or "[::1]:0", a port number is automatically chosen.
 	Address string
+	//业务逻辑struct
 	Objects []interface{}
+	//用来存储业务逻辑的方法
 	funcMap map[string]reflect.Value
 }
 
@@ -34,16 +39,18 @@ func (s *SocketServer) Register() {
 	s.Populate()
 	defer netListen.Close()
 	fmt.Println("Waiting for clients")
-	//定义一个WaitGroup
+	//定义一个WaitGroup 实现并发控制
 	var wg sync.WaitGroup
 	//计数器设置为2000
 	wg.Add(2000)
 	for {
+		//用来返回一个新的连接，进行后续操作
 		conn, err := netListen.Accept()
 		if err != nil {
 			continue
 		}
 		fmt.Println(conn.RemoteAddr().String(), " tcp connect success")
+		//处理
 		go s.ConnHandle(conn, wg)
 	}
 }
@@ -64,8 +71,10 @@ func (s *SocketServer) Populate() {
 
 func (s *SocketServer) ConnHandle(conn net.Conn, wg sync.WaitGroup) {
 	buffer := make([]byte, 2048)
+	//减一
 	defer wg.Done()
 	for {
+		//用于接收数据，返回接收的长度或者返回错误，是TCPConn的方法
 		n, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Fatal error: ", err)
@@ -73,6 +82,7 @@ func (s *SocketServer) ConnHandle(conn net.Conn, wg sync.WaitGroup) {
 			//fmt.Println(conn.RemoteAddr().String(), " connection error: ", err)
 			//return
 		}
+		//读取数据到data
 		data := s.Read(buffer[:n])
 		if _, ok := data["controller"]; !ok {
 			fmt.Fprintf(os.Stderr, "Fatal error: ", "The controller does not exist")
@@ -92,6 +102,7 @@ func (s *SocketServer) ConnHandle(conn net.Conn, wg sync.WaitGroup) {
 			return
 		}
 		routers := []reflect.Value{reflect.ValueOf(&conn), reflect.ValueOf(data["params"])}
+		//根据controller  action  params调用相应的方法
 		routerReflect.Call(routers)
 		//fmt.Println(routerReflect)
 	}
