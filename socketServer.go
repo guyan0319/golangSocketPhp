@@ -24,7 +24,6 @@ type SocketServer struct {
 }
 
 func (s *SocketServer) Register() {
-
 	//建立socket，监听端口
 	netListen, err := net.Listen(s.Network, s.Address)
 	if err != nil {
@@ -32,8 +31,7 @@ func (s *SocketServer) Register() {
 		return
 	}
 	//填充funcMap
-	s.populate()
-
+	s.Populate()
 	defer netListen.Close()
 	fmt.Println("Waiting for clients")
 	//定义一个WaitGroup
@@ -46,10 +44,10 @@ func (s *SocketServer) Register() {
 			continue
 		}
 		fmt.Println(conn.RemoteAddr().String(), " tcp connect success")
-		go s.connHandle(conn, wg)
+		go s.ConnHandle(conn, wg)
 	}
 }
-func (s *SocketServer) populate() {
+func (s *SocketServer) Populate() {
 	s.funcMap = make(map[string]reflect.Value, 0)
 	for _, v := range s.Objects {
 		reflectValue := reflect.ValueOf(v)
@@ -64,7 +62,7 @@ func (s *SocketServer) populate() {
 	}
 }
 
-func (s *SocketServer) connHandle(conn net.Conn, wg sync.WaitGroup) {
+func (s *SocketServer) ConnHandle(conn net.Conn, wg sync.WaitGroup) {
 	buffer := make([]byte, 2048)
 	defer wg.Done()
 	for {
@@ -75,7 +73,7 @@ func (s *SocketServer) connHandle(conn net.Conn, wg sync.WaitGroup) {
 			//fmt.Println(conn.RemoteAddr().String(), " connection error: ", err)
 			//return
 		}
-		data := s.read(buffer[:n])
+		data := s.Read(buffer[:n])
 		if _, ok := data["controller"]; !ok {
 			fmt.Fprintf(os.Stderr, "Fatal error: ", "The controller does not exist")
 			return
@@ -104,7 +102,7 @@ func (s *SocketServer) connHandle(conn net.Conn, wg sync.WaitGroup) {
 	}
 }
 
-func (s *SocketServer) read(msg []byte) map[string]interface{} {
+func (s *SocketServer) Read(msg []byte) map[string]interface{} {
 	var data map[string]interface{}
 	err := json.Unmarshal(msg, &data)
 	if err != nil {
