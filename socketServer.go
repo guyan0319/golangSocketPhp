@@ -93,12 +93,7 @@ func (s *SocketServer) ConnHandle(conn net.Conn, wg sync.WaitGroup) {
 		}
 		routers := []reflect.Value{reflect.ValueOf(&conn), reflect.ValueOf(data["params"])}
 		routerReflect.Call(routers)
-		fmt.Println(routerReflect)
-		//fmt.Println(conn.RemoteAddr().String(), "receive data string:\n", string(buffer[:n]))
-		//words := "hi, john"
-		//words := conn.RemoteAddr().String()
-		//conn.Write([]byte(words))
-		//time.Sleep(time.Second * 1)
+		//fmt.Println(routerReflect)
 	}
 }
 
